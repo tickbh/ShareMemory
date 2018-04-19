@@ -4,3 +4,9 @@ version = "0.1.0"
 authors = ["tickbh <tickdream125@hotmail.com>"]
 
 [dependencies]
+libc = "0.2"
+winapi = { version = "0.3", features = ["winuser", "memoryapi", "winbase", "errhandlingapi", "handleapi", "minwinbase", "minwindef" ] }
+
+
+[dev-dependencies]
+time = "0.1.39"
