@@ -5,12 +5,13 @@ use std::iter::once;
 use std::os::windows::ffi::OsStrExt;
 use std::io::{self, Result, Error, ErrorKind};
 
-use winapi::um::handleapi::INVALID_HANDLE_VALUE;
+use winapi::um::handleapi::{CloseHandle, INVALID_HANDLE_VALUE};
 use winapi::um::winnt::{HANDLE, PAGE_READWRITE};
-use winapi::um::memoryapi::{CreateFileMappingW, OpenFileMappingW, FILE_MAP_ALL_ACCESS, MapViewOfFile};
+use winapi::um::memoryapi::{CreateFileMappingW, OpenFileMappingW, FILE_MAP_ALL_ACCESS, MapViewOfFile, UnmapViewOfFile};
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::minwinbase::SECURITY_ATTRIBUTES;
 use winapi::shared::minwindef::DWORD;
+use winapi::ctypes::c_void;
 
 pub type MemoryId = HANDLE;
 pub const INVALID_MEMORY_ID: MemoryId = INVALID_HANDLE_VALUE;
@@ -83,7 +84,6 @@ impl Memory {
 
         unsafe {
             let mut name: Vec<u16> = OsStr::new(&name).encode_wide().chain(once(0)).collect();
-
             let handle = OpenFileMappingW(FILE_MAP_ALL_ACCESS, 0, name.as_mut_ptr());
             if handle == NULL {
                 return Err(last_error());
@@ -117,23 +117,21 @@ impl Memory {
         if self.first.is_none() {
             return Ok(());
         }
-        // unsafe {
-        //     if self.first.is_some() {
-        //         println!("shmdt !!!!!!!!!!!!{:?}", self.first);
-        //         cvt(libc::shmdt(self.first.unwrap()))?;
-        //         self.first = None;
-        //     }
-        // }
+        unsafe {
+            if self.first.is_some() {
+                cvt(UnmapViewOfFile(self.first.unwrap() as *const c_void))?;
+                self.first = None;
+            }
+
+            cvt(CloseHandle(self.id))?;
+            self.id = INVALID_HANDLE_VALUE;
+        }
         return Ok(());
     }
 
     pub fn destory(&mut self) -> Result<()> {
-        // self.check_vaild()?;
-        // self.deattch()?;
-        // unsafe {
-        //     cvt(libc::shmctl(self.id, libc::IPC_RMID, ::std::ptr::null_mut()))?;
-        // }
-        // self.id = INVALID_MEMORY_ID;
+        self.check_vaild()?;
+        self.deattch()?;
         Ok(())
     }
 
@@ -146,5 +144,11 @@ impl Memory {
             return Err(Error::new(ErrorKind::InvalidData, "no vaild"));
         }
         return Ok(true);
+    }
+}
+
+impl Drop for Memory {
+    fn drop(&mut self) {
+        let _ = self.deattch();
     }
 }
