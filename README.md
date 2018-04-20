@@ -1,7 +1,7 @@
-socket for rust
+this is share memory impl multi process for rust 
 =====================
 
-[![Build Status](https://travis-ci.org/tickbh/psocket-rs.svg?branch=master)](https://travis-ci.org/tickbh/psocket-rs) [![Crates.io](https://img.shields.io/crates/v/psocket.svg)](https://crates.io/crates/psocket)
+[![Build Status](https://travis-ci.org/tickbh/ShareMemory.svg?branch=master)](https://travis-ci.org/tickbh/ShareMemory) [![Crates.io](https://img.shields.io/crates/v/share_memory.svg)](https://crates.io/crates/share_memory)
 
 A Rust library for socket. 
 
@@ -11,13 +11,13 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-psocket = "0.1"
+share_memory = "0.1"
 ```
 
 and this to your crate root:
 
 ```rust
-extern crate psocket;
+extern crate share_memory;
 ```
 
 How to use
