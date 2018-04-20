@@ -58,7 +58,7 @@ pub struct Memory {
 
 impl Memory {
 
-    pub fn new_create(mut name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
+    pub fn new_create(mut name: String, size: usize, _path_name: Option<String>) -> Result<Memory> {
         if name.len() == 0 {
             name = String::from("/tmp");
         }
@@ -79,7 +79,7 @@ impl Memory {
         }
     }
 
-    pub fn new_open(mut name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
+    pub fn new_open(mut name: String, size: usize, _path_name: Option<String>) -> Result<Memory> {
         if name.len() == 0 {
             name = String::from("/tmp");
         }
