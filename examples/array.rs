@@ -3,36 +3,56 @@ extern crate time;
 use share_memory::ShareMemory;
 
 type ARRAY = [i32; 80];
-fn main () {
-    let size : usize = std::mem::size_of::<ARRAY>();
-    let mut share = ShareMemory::new_create(String::from("/tmp"), size, None).unwrap();
-    // let now = time::precise_time_ns() / 1000 as u64;
-    // let mut share = {
-    //     println!("now = {:?}", now);
-    //     if now % 2 == 0 {
-    //         ShareMemory::new_create(String::from("/tmp"), size, None).unwrap()
-    //     } else {
-    //         ShareMemory::new_open(String::from("/tmp"), size, None).unwrap()
-    //     }
-    // };
-    if let Some(addr) = share.first_memory() {
-        let mut data: &mut ARRAY = unsafe {
-            std::mem::transmute(addr)
-        };
 
-        data[0] += 1;
-        println!("{:?}", data[0]);
+fn test1() {
+    let size : usize = std::mem::size_of::<ARRAY>();
+    let now = time::precise_time_ns() / 1000 as u64;
+    println!("now = {:?}", now);
+    let mut share = ShareMemory::new_create(String::from("."), size * 2, None).unwrap();
+    if now % 2 == 0 {
+        if let Some(addr) = share.offset_memory(size).ok().unwrap() {
+            let data: &mut ARRAY = unsafe {
+                std::mem::transmute(addr)
+            };
+
+            data[0] += 1;
+            println!("{:?}", data[0]);
+        }
+    } else {
+        if let Some(addr) = share.first_memory().ok().unwrap() {
+            let data: &mut ARRAY = unsafe {
+                std::mem::transmute(addr)
+            };
+
+            data[0] += 1;
+            println!("{:?}", data[0]);
+        }
     }
-    // let mut share = ShareMemory::new_create(String::from("/tmp"), size, None).unwrap();
-    // share.first_memory();
-    // share.destory().unwrap();
-    // {
-    //     let mut share = ShareMemory::new_create(String::from("/tmp"), size, None).unwrap();
-    //     share.first_memory();
-    //     let mut share = ShareMemory::new_create(String::from("/tmp"), size, None).unwrap();
-    //     share.first_memory();
-    // }
     loop {
 
     }
+}
+
+fn test2() {
+    let size : usize = std::mem::size_of::<ARRAY>();
+    let now = time::precise_time_ns() / 1000 as u64;
+    println!("now = {:?}", now);
+    let mut share = if now % 2 == 0 {
+        ShareMemory::new_create(String::from("."), size * 2, None).unwrap()
+    } else {
+        ShareMemory::new_create(String::from("..."), size * 2, None).unwrap()
+    };
+    if let Some(addr) = share.first_memory().ok().unwrap() {
+        let data: &mut ARRAY = unsafe {
+            std::mem::transmute(addr)
+        };
+        data[0] += 1;
+        println!("{:?}", data[0]);
+    }
+    loop {
+
+    }
+}
+fn main () {
+    test2();
 }

@@ -31,21 +31,30 @@ pub fn cvt<T: IsMinusOne>(t: T) -> io::Result<T> {
 pub struct Memory {
     id: MemoryId,
     first: Option<*mut libc::c_void>,
+    size: usize,
 }
 
 impl Memory {
-    pub fn new_create(mut name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
-        if name.len() == 0 {
-            name = String::from("/tmp");
+    fn hash_code(name: &String) -> i32 {
+        let bytes = name.as_bytes();
+        let mut h = 0 as i32;
+        for byte in bytes {
+            h = h.wrapping_mul(31).wrapping_add(*byte as i32);
         }
+        return h;
+    }
 
+    pub fn new_create(name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
+        let path = path_name.unwrap_or(String::from("."));
+        let code = Self::hash_code(&name);
         unsafe {
-            let key = cvt(libc::ftok(name.as_bytes().as_ptr() as *mut i8, 0))?;
+            let key = cvt(libc::ftok(path.as_bytes().as_ptr() as *mut i8, code))?;
             match cvt(libc::shmget(key, size, 0o0666 | libc::IPC_CREAT | libc::IPC_EXCL)) {
                 Ok(id) => {
                     return Ok(Memory {
                         id: id,
                         first: None,
+                        size: size,
                     })
                 }
                 Err(_) => {
@@ -53,24 +62,24 @@ impl Memory {
                     return Ok(Memory {
                         id: id,
                         first: None,
+                        size: size,
                     })
                 }
             }
         }
     }
 
-    pub fn new_open(mut name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
-        if name.len() == 0 {
-            name = String::from("/tmp");
-        }
-
+    pub fn new_open(name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
+        let path = path_name.unwrap_or(String::from("."));
+        let code = Self::hash_code(&name);
         unsafe {
-            let key = cvt(libc::ftok(name.as_bytes().as_ptr() as *mut i8, 0))?;
+            let key = cvt(libc::ftok(path.as_bytes().as_ptr() as *mut i8, code))?;
             match cvt(libc::shmget(key, size, 0o0666 | libc::IPC_CREAT | libc::IPC_EXCL)) {
                 Ok(id) => {
                     return Ok(Memory {
                         id: id,
                         first: None,
+                        size: size,
                     })
                 }
                 Err(_) => {
@@ -78,28 +87,39 @@ impl Memory {
                     return Ok(Memory {
                         id: id,
                         first: None,
+                        size: size,
                     })
                 }
             }
         }
     }
 
-    pub fn first_memory(&mut self) -> Option<*mut libc::c_void> {
-        if !self.is_vaild() {
-            return None;
-        }
+    pub fn first_memory(&mut self) -> Result<Option<*mut libc::c_void>> {
+        self.check_vaild()?;
         if self.first.is_some() {
-            return self.first;
+            return Ok(self.first);
         }
         unsafe {
             match libc::shmat(self.id, ::std::ptr::null_mut(), 0) {
-                addr if addr.is_null() => None,
+                addr if addr.is_null() => Ok(None),
                 addr => {
                     self.first = Some(addr);
-                    self.first
+                    Ok(self.first)
                 }
             }
         }
+    }
+
+    pub fn offset_memory(&mut self, offset: usize) -> Result<Option<*mut libc::c_void>> {
+        if offset >= self.size {
+            return Err(Error::new(ErrorKind::InvalidData, "offset bigger than size"));
+        }
+        if let Some(first) = self.first_memory()? {
+            unsafe {
+                return Ok(Some(first.offset(offset as isize)));
+            }
+        }
+        return Ok(None)
     }
 
     pub fn deattch(&mut self) -> Result<()> {
@@ -109,7 +129,6 @@ impl Memory {
         }
         unsafe {
             if self.first.is_some() {
-                println!("shmdt !!!!!!!!!!!!{:?}", self.first);
                 cvt(libc::shmdt(self.first.unwrap()))?;
                 self.first = None;
             }
@@ -137,7 +156,6 @@ impl Memory {
         }
         return Ok(true);
     }
-
 }
 
 impl Drop for Memory {

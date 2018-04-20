@@ -53,6 +53,7 @@ pub fn cvt<T: IsMinusOne>(t: T) -> io::Result<T> {
 pub struct Memory {
     id: HANDLE,
     first: Option<*mut libc::c_void>,
+    size: usize,
 }
 
 impl Memory {
@@ -72,7 +73,8 @@ impl Memory {
 
             return Ok(Memory {
                 id: handle,
-                first: None
+                first: None,
+                size: size,
             })
         }
     }
@@ -91,25 +93,39 @@ impl Memory {
 
             return Ok(Memory {
                 id: handle,
-                first: None
+                first: None,
+                size: size,
             })
         }
     }
 
-    pub fn first_memory(&mut self) -> Option<*mut libc::c_void> {
-        if !self.is_vaild() {
-            return None;
+    pub fn first_memory(&mut self) -> Result<Option<*mut libc::c_void>> {
+        self.check_vaild()?;
+        if self.first.is_some() {
+            return Ok(self.first);
         }
         
         unsafe {
             match MapViewOfFile(self.id, FILE_MAP_ALL_ACCESS, 0, 0, 0) {
-                addr if addr.is_null() => None,
+                addr if addr.is_null() => Ok(None),
                 addr => {
                     self.first = Some(addr as *mut libc::c_void);
-                    self.first
+                    Ok(self.first)
                 }
             }
         }
+    }
+
+    pub fn offset_memory(&mut self, offset: usize) -> Result<Option<*mut libc::c_void>> {
+        if offset >= self.size {
+            return Err(Error::new(ErrorKind::InvalidData, "offset bigger than size"));
+        }
+        if let Some(first) = self.first_memory()? {
+            unsafe {
+                return Ok(Some(first.offset(offset as isize)));
+            }
+        }
+        return Ok(None)
     }
 
     pub fn deattch(&mut self) -> Result<()> {
