@@ -7,7 +7,7 @@ license = "Apache-2.0/MIT"
 documentation = "https://docs.rs/share_memory"
 repository = "https://github.com/tickbh/ShareMemory"
 readme = "README.md"
-keywords = ["memory", "process", "multi_process", "cross_platform", "CreateFileMappingW", "shmget"]
+keywords = ["memory", "process", "multi_process", "cross_platform", "shmget"]
 
 [dependencies]
 libc = "0.2"
