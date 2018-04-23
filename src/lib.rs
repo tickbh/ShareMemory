@@ -18,7 +18,7 @@ pub struct ShareMemory(sys::Memory);
 /// type ARRAY = [i32; 80];
 /// fn main () {
 ///     let size : usize = std::mem::size_of::<ARRAY>();
-///     let mut share = ShareMemory::new_create(String::from("."), size * 2, None).unwrap();
+///     let mut share = ShareMemory::new(String::from("."), size * 2, None).unwrap();
 ///     if let Some(addr) = share.first_memory().ok().unwrap() {
 ///         let mut data: &mut ARRAY = unsafe {
 ///             std::mem::transmute(addr)
@@ -31,14 +31,9 @@ pub struct ShareMemory(sys::Memory);
 /// }
 /// ```
 impl ShareMemory {
-    /// 打开一个已存在共享内存, 打开失败则返回相应的错误
-    pub fn new_open(name: String, size: usize, path_name: Option<String>) -> Result<ShareMemory> {
-        Ok(ShareMemory(sys::Memory::new_open(name, size, path_name)?))
-    }
-
-    /// 创建一个已存在共享内存, 创建失败会尝试打开已存在的共享内存, 如果依然失败则返回相应的错误
-    pub fn new_create(name: String, size: usize, path_name: Option<String>) -> Result<ShareMemory> {
-        Ok(ShareMemory(sys::Memory::new_create(name, size, path_name)?))
+    /// 首先打开一个已存在共享内存, 如果失败, 则创建一个已存在共享内存, 创建失败会尝试打开已存在的共享内存, 如果依然失败则返回相应的错误
+    pub fn new(name: String, size: usize, path_name: Option<String>) -> Result<ShareMemory> {
+        Ok(ShareMemory(sys::Memory::new(name, size, path_name)?))
     }
 
     /// 返回共享内存的首地址

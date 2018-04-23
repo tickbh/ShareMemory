@@ -8,7 +8,7 @@ fn test1() {
     let size : usize = std::mem::size_of::<ARRAY>();
     let now = time::precise_time_ns() / 1000 as u64;
     println!("now = {:?}", now);
-    let mut share = ShareMemory::new_create(String::from("."), size * 2, None).unwrap();
+    let mut share = ShareMemory::new(String::from("."), size * 2, None).unwrap();
     if now % 2 == 0 {
         if let Some(addr) = share.offset_memory(size).ok().unwrap() {
             let data: &mut ARRAY = unsafe {
@@ -38,11 +38,12 @@ fn test2() {
     let now = time::precise_time_ns() / 1000 as u64;
     println!("now = {:?}", now);
     let mut share = if now % 2 == 0 {
-        ShareMemory::new_create(String::from("."), size * 2, None).unwrap()
+        ShareMemory::new(String::from(".11"), size * 2, None).unwrap()
     } else {
-        ShareMemory::new_create(String::from("..."), size * 2, None).unwrap()
+        ShareMemory::new(String::from(".11"), size * 2, None).unwrap()
     };
     if let Some(addr) = share.first_memory().ok().unwrap() {
+        println!("addr = {:?}", addr);
         let data: &mut ARRAY = unsafe {
             std::mem::transmute(addr)
         };

@@ -58,37 +58,19 @@ pub struct Memory {
 
 impl Memory {
 
-    pub fn new_create(mut name: String, size: usize, _path_name: Option<String>) -> Result<Memory> {
+    pub fn new(mut name: String, size: usize, _path_name: Option<String>) -> Result<Memory> {
         if name.len() == 0 {
             name = String::from("/tmp");
         }
 
         unsafe {
             let mut name: Vec<u16> = OsStr::new(&name).encode_wide().chain(once(0)).collect();
-
-            let handle = CreateFileMappingW(INVALID_HANDLE_VALUE, 0 as *mut SECURITY_ATTRIBUTES, PAGE_READWRITE, (size >> 16 >> 16) as DWORD, (size & 0xffffffff) as DWORD, name.as_mut_ptr());
+            let mut handle = OpenFileMappingW(FILE_MAP_ALL_ACCESS, 0, name.as_mut_ptr());
             if handle == NULL {
-                return Err(last_error());
-            }
-
-            return Ok(Memory {
-                id: handle,
-                first: None,
-                size: size,
-            })
-        }
-    }
-
-    pub fn new_open(mut name: String, size: usize, _path_name: Option<String>) -> Result<Memory> {
-        if name.len() == 0 {
-            name = String::from("/tmp");
-        }
-
-        unsafe {
-            let mut name: Vec<u16> = OsStr::new(&name).encode_wide().chain(once(0)).collect();
-            let handle = OpenFileMappingW(FILE_MAP_ALL_ACCESS, 0, name.as_mut_ptr());
-            if handle == NULL {
-                return Err(last_error());
+                handle = CreateFileMappingW(INVALID_HANDLE_VALUE, 0 as *mut SECURITY_ATTRIBUTES, PAGE_READWRITE, (size >> 16 >> 16) as DWORD, (size & 0xffffffff) as DWORD, name.as_mut_ptr());
+                if handle == NULL {
+                    return Err(last_error());
+                }
             }
 
             return Ok(Memory {

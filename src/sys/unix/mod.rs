@@ -44,12 +44,12 @@ impl Memory {
         return h;
     }
 
-    pub fn new_create(name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
-        let path = path_name.unwrap_or(String::from("."));
+    pub fn new(name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
+        let path = path_name.unwrap_or(String::from("/tmp"));
         let code = Self::hash_code(&name);
         unsafe {
             let key = cvt(libc::ftok(path.as_bytes().as_ptr() as *mut i8, code))?;
-            match cvt(libc::shmget(key, size, 0o0666 | libc::IPC_CREAT | libc::IPC_EXCL)) {
+            match cvt(libc::shmget(key, size, 0o0666)) {
                 Ok(id) => {
                     return Ok(Memory {
                         id: id,
@@ -58,32 +58,7 @@ impl Memory {
                     })
                 }
                 Err(_) => {
-                    let id = cvt(libc::shmget(key, size, 0o0666))?;
-                    return Ok(Memory {
-                        id: id,
-                        first: None,
-                        size: size,
-                    })
-                }
-            }
-        }
-    }
-
-    pub fn new_open(name: String, size: usize, path_name: Option<String>) -> Result<Memory> {
-        let path = path_name.unwrap_or(String::from("."));
-        let code = Self::hash_code(&name);
-        unsafe {
-            let key = cvt(libc::ftok(path.as_bytes().as_ptr() as *mut i8, code))?;
-            match cvt(libc::shmget(key, size, 0o0666 | libc::IPC_CREAT | libc::IPC_EXCL)) {
-                Ok(id) => {
-                    return Ok(Memory {
-                        id: id,
-                        first: None,
-                        size: size,
-                    })
-                }
-                Err(_) => {
-                    let id = cvt(libc::shmget(key, size, 0o0666))?;
+                    let id = cvt(libc::shmget(key, size, 0o0666 | libc::IPC_CREAT | libc::IPC_EXCL))?;
                     return Ok(Memory {
                         id: id,
                         first: None,

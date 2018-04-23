@@ -1,6 +1,6 @@
 [package]
 name = "share_memory"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["tickbh <tickdream125@hotmail.com>"]
 description = "This is share memory impl multi process for rust"
 license = "Apache-2.0/MIT"
